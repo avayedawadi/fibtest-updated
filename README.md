@@ -1,5 +1,14 @@
 # Fibtest
 
+## My (Avaye Dawadi's) changes
+This code was written when Linux was still on cgroup v1 but I re-wrote this to work with cgroup v2 conventions (please 
+refer to kernel documentation for differences between v1 and v2). If something is wrong or could be made better, feel free
+to make a pull request.
+
+To Be Dones:
+- Show the throttled percentage value
+- Figure out how to make this work with being able to choose your own scheduler using chrt, it would be cool to see how things are different based on different scheduling algorithms but the throttled data just shows as 0 when using chrt.
+
 ![OSS Lifecycle](https://img.shields.io/osslifecycle/indeedeng/fibtest.svg)
 
 Fibtest is a small C application that runs the Fibonacci sequence and reports
