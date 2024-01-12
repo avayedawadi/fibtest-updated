@@ -52,18 +52,26 @@ setgovernors () {
 }
 
 runtest () {
-	BNRTHROTT=$(grep nr_throttled ${CGROUPDIR}/${CGROUP}/cpu.stat | awk '{print $2}')
-	BUSAGE=$(cat ${CGROUPDIR}/${CGROUP}/cpuacct.usage)
+	BNRTHROTT=$(grep nr_throttled ${CGROUPDIR}/cpu.stat | awk '{print $2}')
+	BUSAGE=$(grep usage_usec ${CGROUPDIR}/${CGROUP}/cpu.stat | awk '{print $2}')
+	BPERIODS=$(grep nr_periods ${CGROUPDIR}/cpu.stat | awk '{print $2}')
+
 
 	#####  RUN TEST #####
 	ITERATIONS=$(./fibtest -t "$THREADS" -s 5 | awk -F': ' '{print $2}' )
 	echo "Iterations Completed(M): $ITERATIONS"
-	ANRTHROTT=$(grep nr_throttled ${CGROUPDIR}/${CGROUP}/cpu.stat | awk '{print $2}')
-	AUSAGE=$(cat ${CGROUPDIR}/${CGROUP}/cpuacct.usage)
+	ANRTHROTT=$(grep nr_throttled ${CGROUPDIR}/cpu.stat | awk '{print $2}')
+	AUSAGE=$(grep usage_usec ${CGROUPDIR}/cpu.stat | awk '{print $2}')
+	APERIODS=$(grep nr_periods ${CGROUPDIR}/cpu.stat | awk '{print $2}')
+
+
 	DNRTHROTT=$(( ANRTHROTT - BNRTHROTT ))
+	DPERIODS=$(( APERIODS - BPERIODS ))
 	DUSAGE=$(( AUSAGE - BUSAGE ))
-	echo "Throttled for: $DNRTHROTT "
-	echo "CPU Usage (msecs) = $((DUSAGE / 1000000 ))"
+	echo "Total Number of Periods: $DPERIODS"
+	echo "Throttled for (# of periods): $DNRTHROTT"
+	# Here the division was initially by 1000000 for nanoseconds
+	echo "CPU Usage (msecs) = $((DUSAGE / 1000 ))"
 }
 
 
@@ -77,8 +85,8 @@ if [ ! -d ${CGROUPDIR}/${CGROUP} ] ; then
 fi
 
 # Set the CPU quota
-sudo sh -c "echo $QUOTA > ${CGROUPDIR}/${CGROUP}/cpu.cfs_quota_us"
-sudo sh -c "echo $$ >> ${CGROUPDIR}/${CGROUP}/tasks"
+sudo sh -c "echo $QUOTA > ${CGROUPDIR}/cpu.max"
+sudo sh -c "echo $$ >> ${CGROUPDIR}/${CGROUP}/cgroup.procs"
 
 # ****************** RUN THE TEST ***************
 # Uses Number of CPUs 
@@ -90,3 +98,7 @@ THREADEDIT=${ITERATIONS}
 # ***********************************************
 
 setgovernors "${OLDGOV}" "${OLDENERGY}"
+
+# Set CPU quota back to max (the default)
+sudo sh -c "echo $(( 10000 )) > ${CGROUPDIR}/cpu.max"
+
